@@ -6,7 +6,7 @@ Anyway, we'll try to put stuff on here that other people might actually find use
 
 So far, we've got:
 
-    forcegps.py:
+    scripts/forcegps.py:
       What? Python script to force GPS EXIF tags on your image files
       Why?  Google Photos hates to put things in the right order that don't have GPS tags
 
