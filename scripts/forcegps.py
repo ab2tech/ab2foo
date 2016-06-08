@@ -235,7 +235,7 @@ if not args.force:
   for arg in args.filename:
     if os.path.exists(arg):
       # build the exiftool call string
-      exiftool_call = [exiftool, '-s', '-GPSLatitude', '-GPSLongitude', arg]
+      exiftool_call = [exiftool, '-m', '-s', '-GPSLatitude', '-GPSLongitude', arg]
       log.info('exiftool_call: ' + str(exiftool_call))
       # TODO not ideal to call this for every file, but for now it's the easiest
       # way to get the job done
@@ -263,6 +263,7 @@ log.info(file_list)
 if file_list:
   # build the exiftool call
   exiftool_call = [exiftool,
+                   '-m', # Ignore warnings and minor errors
                    '-preserve', # Preserve the original file time
                    '-GPSLatitude=' + latitude,
                    '-GPSLongitude=' + longitude,
