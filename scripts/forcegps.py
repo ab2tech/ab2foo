@@ -26,6 +26,10 @@
 # TODO there are many ways to make this script more pythonic, but as-is this was
 # a quick hack to save us some time and pain...feel free to help us make it
 # better and/or more useful.
+#
+# FYI - Google has recently added batch date editing, which is awesome, but we
+# feel like this still has its place for cleaning things up at the source.
+# Hopefully it can be useful to others also.
 
 # Import python module dependencies
 try:
