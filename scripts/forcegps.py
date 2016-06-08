@@ -44,7 +44,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.ERROR)
 
 # Print log level if DEBUG or lower is enabled
-log.debug('Debug level: ' + str(log.getEffectiveLevel()))
+log.info('Debug level: ' + str(log.getEffectiveLevel()))
 
 # Import required modules
 import_success_flag = True
@@ -52,7 +52,7 @@ import_success_flag = True
 module = 'argparse '
 try:
   import argparse
-  log.debug(module + 'module loaded')
+  log.info(module + 'module loaded')
 except ImportError:
   log.exception(module + 'module failed to Load')
   import_success_flag = False
@@ -60,7 +60,7 @@ except ImportError:
 module = 'itertools->imap '
 try:
   from itertools import imap
-  log.debug(module + 'module loaded')
+  log.info(module + 'module loaded')
 except ImportError:
   log.exception(module + 'module failed to load')
   import_success_flag = False
@@ -68,7 +68,15 @@ except ImportError:
 module = 'os '
 try:
   import os
-  log.debug(module + 'module loaded')
+  log.info(module + 'module loaded')
+except ImportError:
+  log.exception(module + 'module failed to Load')
+  import_success_flag = False
+
+module = 're '
+try:
+  import re
+  log.info(module + 'module loaded')
 except ImportError:
   log.exception(module + 'module failed to Load')
   import_success_flag = False
@@ -76,7 +84,7 @@ except ImportError:
 module = 'string '
 try:
   import string
-  log.debug(module + 'module loaded')
+  log.info(module + 'module loaded')
 except ImportError:
   log.exception(module + 'module failed to Load')
   import_success_flag = False
@@ -84,7 +92,7 @@ except ImportError:
 module = 'subprocess '
 try:
   import subprocess
-  log.debug(module + 'module loaded')
+  log.info(module + 'module loaded')
 except ImportError:
   log.exception(module + 'module failed to Load')
   import_success_flag = False
@@ -93,7 +101,7 @@ if not import_success_flag:
   log.error('module(s) failed to load')
   raw_input('Press Enter to continue...')
   raise SystemExit, 1
-log.debug('')
+log.info('')
 
 # Function for capturing the full executable path of a program
 def which(program):
@@ -138,7 +146,7 @@ parser.add_argument('-v', '--verbose', action='store_true',
 args = parser.parse_args()
 
 if args.verbose:
-  log.setLevel(logging.DEBUG)
+  log.setLevel(logging.INFO)
 
 alias_dict = dict()
 # Alias definitions should be *all lowercase*, but script arguments can be any
@@ -181,7 +189,7 @@ if exiftool is None:
 if args.alias is not None:
   coordinates = alias_dict.get(args.alias.lower())
   if coordinates is not None:
-    log.debug('Configuring GPS to: ' + str(coordinates))
+    log.info('Configuring GPS to: ' + str(coordinates))
 elif args.coordinates is not None:
   coordinates = args.coordinates
 #elif args.search is not None:
@@ -223,12 +231,12 @@ if not args.force:
     if os.path.exists(arg):
       # build the exiftool call string
       exiftool_call = [exiftool, '-s', '-GPSLatitude', '-GPSLongitude', arg]
-      log.debug('exiftool_call: ' + str(exiftool_call))
+      log.info('exiftool_call: ' + str(exiftool_call))
       # TODO not ideal to call this for every file, but for now it's the easiest
       # way to get the job done
       exiftool_out = \
           subprocess.check_output(exiftool_call, stderr=subprocess.STDOUT)
-      log.debug('exiftool_out: ' + exiftool_out)
+      log.debug('exiftool_out:\n' + exiftool_out)
       # remove all whitespace because we need to see if these GPS tags exist
       exiftool_out = exiftool_out.translate(None, string.whitespace)
 
@@ -236,6 +244,7 @@ if not args.force:
       # updated with GPS tags
       if not exiftool_out:
         file_list.append(arg)
+        log.info('adding file: ' + arg)
     else:
       log.exception('Invalid filename specified...')
       raise SystemExit, 1
@@ -243,7 +252,7 @@ else:
   file_list = args.filename
 
 # Log the final list of files to edit
-log.debug(file_list)
+log.info(file_list)
 
 # Only proceed if there are files to edit
 if file_list:
@@ -259,7 +268,7 @@ if file_list:
   if args.overwrite is True:
     exiftool_call += ['-overwrite_original']
 
-  log.debug('exiftool_call: ' + str(exiftool_call))
+  log.info('exiftool_call: ' + str(exiftool_call))
 
   subprocess.call(exiftool_call, stderr=subprocess.STDOUT)
   raise SystemExit, 0
