@@ -140,6 +140,8 @@ parser.add_argument('-f', '--force', action='store_true',
 with existing coordinates)')
 parser.add_argument('-l', '--list_aliases', action='store_true',
   help='list all available aliases and exit')
+parser.add_argument('-n', '--do_nothing', action='store_true',
+  help='do nothing (useful with -v to preview files to be edited')
 parser.add_argument('-o', '--overwrite', action='store_true',
   help='overwrite original file(s) with edits (CAUTION)')
 parser.add_argument('-v', '--verbose', action='store_true',
@@ -200,6 +202,10 @@ elif args.coordinates is not None:
 #elif args.search is not None:
 #  TODO add if possible
 #  print 'Go search for coordinates'
+elif args.do_nothing:
+  # You may all do nothing, I'll go to Texas!
+  #     - If Davy Crockett wrote our comments...
+  coordinates = alias_dict.get('tx')
 else:
   print 'Coordinates not specified'
   raise SystemExit, 1
@@ -259,8 +265,9 @@ else:
 # Log the final list of files to edit
 log.info(file_list)
 
-# Only proceed if there are files to edit
-if file_list:
+# Only proceed if there are files to edit and we're doing something (i.e. not
+# doing nothing)
+if file_list and not args.do_nothing:
   # build the exiftool call
   exiftool_call = [exiftool,
                    '-m', # Ignore warnings and minor errors
