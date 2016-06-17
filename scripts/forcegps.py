@@ -125,6 +125,12 @@ def which(program):
 
     return None
 
+def isValidFile(parser, arg):
+  if not os.path.isfile(arg):
+    parser.error('The file %s does not exist!' % arg)
+  else:
+    return arg
+
 # Create an argument parser
 parser = argparse.ArgumentParser(
   description='force GPS coordinates for the specified files')
@@ -144,11 +150,10 @@ parser.add_argument('-n', '--do_nothing', action='store_true',
   help='do nothing (useful with -v to preview files to be edited')
 parser.add_argument('-o', '--overwrite', action='store_true',
   help='overwrite original file(s) with edits (CAUTION)')
+parser.add_argument('-s', '--source_file', type=lambda x: isValidFile(parser,x),
+  help='source coordinates from a file')
 parser.add_argument('-v', '--verbose', action='append_const', const = 1,
   help='verbose output -- each \'v\' increases verbosity')
-# TODO add if possible
-#parser.add_argument('-s', '--search',
-#  help='search for coordinates based on a phrase (take the first match)')
 args = parser.parse_args()
 
 # Use the verbosity level to determine the log level. Log WARNING by default,
@@ -207,44 +212,75 @@ if exiftool is None:
 # specify coordinates by multiple arguments.
 if args.alias is not None:
   coordinates = alias_dict.get(args.alias.lower())
-  if coordinates is not None:
-    log.info('Configuring GPS to: ' + str(coordinates))
 elif args.coordinates is not None:
   coordinates = args.coordinates
-#elif args.search is not None:
-#  TODO add if possible
-#  print 'Go search for coordinates'
+elif args.source_file is not None:
+  coordinates = None
+  exiftool_call = \
+      [exiftool, '-m', '-s', '-s', '-s', '-GPSLatitude', args.source_file]
+  latitude = subprocess.check_output(exiftool_call,
+                                     stderr=subprocess.STDOUT).strip()
+  log.debug('Extracted latitude ' + latitude + ' from source file "' + \
+            args.source_file + '"')
+  exiftool_call = \
+      [exiftool, '-m', '-s', '-s', '-s', '-GPSLongitude', args.source_file]
+  longitude = subprocess.check_output(exiftool_call,
+                                      stderr=subprocess.STDOUT).strip()
+  log.debug('Extracted longitude ' + longitude + ' from source file "' + \
+            args.source_file + '"')
 elif args.do_nothing:
   # You may all do nothing, I'll go to Texas!
   #     - If Davy Crockett wrote our comments...
-  coordinates = alias_dict.get('tx')
+  coordinates = alias_dict.get('tx') # just minimizing later conditionals
+#elif args.search is not None:
+#  TODO add if possible
+#  print 'Go search for coordinates'
 else:
   print 'Coordinates not specified'
   raise SystemExit, 1
 
-# Extract the lat/long from the specified coordinates
-try:
-  latitude = coordinates[0]
-  longitude = coordinates[1]
-except NameError:
+if args.do_nothing:
+  log.warning('Doing nothing as requested...')
+
+if coordinates is not None:
+  log.info('Configuring GPS to: ' + str(coordinates))
+  # Extract the lat/long from the specified coordinates
+  try:
+    latitude = coordinates[0]
+    longitude = coordinates[1]
+  except NameError:
+    print 'Coordinates not specified'
+    raise SystemExit, 1
+  except TypeError:
+    print 'Coordinates not specified -- check argument order'
+    raise SystemExit, 1
+
+  # Define the lat/long reference directions based on +/-
+  if latitude > 0:
+    latref = 'N'
+  else:
+    latref = 'S'
+
+  if longitude > 0:
+    lonref = 'E'
+  else:
+    lonref = 'W'
+
+  # Now that we've checked for reference direction, make lat/long into printable
+  # strings (we'll need them to pass to exiftool)
+  latitude = str(latitude)
+  longitude = str(longitude)
+elif latitude is not None:
+  # Need to define the references and drop them from the lat/long
+  latref = latitude[-1:]
+  lonref = longitude[-1:]
+  latitude = latitude[:-1].strip()
+  longitude = longitude[:-1].strip()
+  log.info('Configuring GPS to: ' + latitude.strip() + ", " + longitude.strip())
+else:
   print 'Coordinates not specified'
   raise SystemExit, 1
 
-# Define the lat/long reference directions based on +/-
-if latitude > 0:
-  latref = 'N'
-else:
-  latref = 'S'
-
-if longitude > 0:
-  lonref = 'E'
-else:
-  lonref = 'W'
-
-# Now that we've checked for reference direction, make lat/long into printable
-# strings (we'll need them to pass to exiftool)
-latitude = str(latitude)
-longitude = str(longitude)
 
 # Figure out which files need coordinates added unless we're forced to add them
 # to all images with the '-f' / '--force' flag
