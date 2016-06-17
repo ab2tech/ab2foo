@@ -304,8 +304,10 @@ if not args.force:
       if not exiftool_out:
         file_list.append(arg)
         log.info('adding file: ' + arg)
+      else:
+        log.debug('ignoring file: ' + arg)
     else:
-      log.exception('Invalid filename specified...')
+      log.exception('Invalid filename specified: "' + arg + '"')
       raise SystemExit, 1
 else:
   file_list = args.filename
