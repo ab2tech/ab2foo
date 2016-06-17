@@ -144,15 +144,27 @@ parser.add_argument('-n', '--do_nothing', action='store_true',
   help='do nothing (useful with -v to preview files to be edited')
 parser.add_argument('-o', '--overwrite', action='store_true',
   help='overwrite original file(s) with edits (CAUTION)')
-parser.add_argument('-v', '--verbose', action='store_true',
-  help='verbose output')
+parser.add_argument('-v', '--verbose', action='append_const', const = 1,
+  help='verbose output -- each \'v\' increases verbosity')
 # TODO add if possible
 #parser.add_argument('-s', '--search',
 #  help='search for coordinates based on a phrase (take the first match)')
 args = parser.parse_args()
 
-if args.verbose:
-  log.setLevel(logging.INFO)
+# Use the verbosity level to determine the log level. Log WARNING by default,
+# but go to lower levels as requested. Each verbosity 'v' will move down the
+# list one iteration. Maximum verbosity is DEBUG (-vv).
+# Level     Numeric value
+# WARNING   30
+# INFO      20
+# DEBUG     10
+# Set verbosity based on user input
+verbosity = 0 if args.verbose is None else sum(args.verbose)
+# Don't let verbosity drive us below DEBUG
+if verbosity > 2:
+  verbosity = 2
+# Set the logging level
+log.setLevel(logging.WARNING - (verbosity * 10))
 
 alias_dict = dict()
 # Alias definitions should be *all lowercase*, but script arguments can be any
@@ -242,7 +254,7 @@ if not args.force:
     if os.path.exists(arg):
       # build the exiftool call string
       exiftool_call = [exiftool, '-m', '-s', '-GPSLatitude', '-GPSLongitude', arg]
-      log.info('exiftool_call: ' + str(exiftool_call))
+      log.debug('exiftool_call: ' + str(exiftool_call))
       # TODO not ideal to call this for every file, but for now it's the easiest
       # way to get the job done
       exiftool_out = \
@@ -263,7 +275,7 @@ else:
   file_list = args.filename
 
 # Log the final list of files to edit
-log.info(file_list)
+log.debug(file_list)
 
 # Only proceed if there are files to edit and we're doing something (i.e. not
 # doing nothing)
@@ -281,7 +293,7 @@ if file_list and not args.do_nothing:
   if args.overwrite is True:
     exiftool_call += ['-overwrite_original']
 
-  log.info('exiftool_call: ' + str(exiftool_call))
+  log.debug('exiftool_call: ' + str(exiftool_call))
 
   subprocess.call(exiftool_call, stderr=subprocess.STDOUT)
   raise SystemExit, 0
